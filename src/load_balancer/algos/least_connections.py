@@ -10,5 +10,5 @@ class LeastConnectionsStrategy(RoutingStrategy):
         if not servers:
             raise ValueError("No servers in server pool.")
         
-        # Select the server with the least number of active connections
-        return min(servers, key=lambda s: s.active_connections)
+        # since server is a dataclass, we use min with a key function to find server with the least active connections
+        return min(servers, key=lambda s: s.active_connections) 

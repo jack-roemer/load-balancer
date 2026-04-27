@@ -10,7 +10,7 @@ class ServerPool:
     def __init__(self, servers: Iterable[Server] | None = None):
 
         self._servers: dict[str, Server] = {}
-        
+
         if servers:
             for server in servers:
                 self.add_server(server)
@@ -24,12 +24,12 @@ class ServerPool:
         self._servers[server.id] = server
 
     
-    def remove_server(self, server: Server) -> None:
+    def remove_server(self, server_id: str) -> None:
 
-        if server.id not in self._servers:
-            raise KeyError(f"Server with id {server.id} does not exist in server pool.")
+        if server_id not in self._servers:
+            raise KeyError(f"Server with id {server_id} does not exist in server pool.")
         
-        del self._servers[server.id]
+        del self._servers[server_id]
 
 
     def get_server(self, server_id: str) -> Server:

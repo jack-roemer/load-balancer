@@ -14,7 +14,7 @@ class Server:
     avg_response_time: float = 0.0
 
     @property
-    def get_port(self) -> str:
+    def get_address(self) -> str:
         return f"{self.host}:{self.port}"
     
     def add_active_connection(self) -> None:
