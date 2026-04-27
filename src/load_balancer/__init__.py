@@ -6,6 +6,7 @@ from load_balancer.servers.server import Server
 from load_balancer.servers.server_pool import ServerPool
 from load_balancer.algos.consistent_hashing import ConsistentHashingStrategy
 from load_balancer.algos.weighted_round_robin import WeightedRoundRobinStrategy
+from load_balancer.observability.metrics import Metrics
 
 __all__ = [
     "Server",
@@ -16,6 +17,7 @@ __all__ = [
     "LeastConnectionsStrategy",
     "RoundRobinStrategy",
     "ConsistentHashingStrategy",
-    "WeightedRoundRobinStrategy"
+    "WeightedRoundRobinStrategy",
+    "Metrics"
 ]
 
