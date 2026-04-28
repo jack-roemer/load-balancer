@@ -1,15 +1,16 @@
 import pytest
 
 from load_balancer import LoadBalancer, RoundRobinStrategy, Request, NoHealthyServersAvailableError, Server, ServerPool
+from load_balancer.servers.server import ServerState
 
 
 def test_unhealthy_servers_filtering():
 
     server_pool = ServerPool([
-        Server(id="s1", host="localhost", port=8001, healthy=False),
-        Server(id="s2", host="localhost", port=8002, healthy=True),
-        Server(id="s3", host="localhost", port=8003, healthy=False),
-        Server(id="s4", host="localhost", port=8004, healthy=True)
+        Server(id="s1", host="localhost", port=8001, state=ServerState.UNHEALTHY),
+        Server(id="s2", host="localhost", port=8002, state=ServerState.HEALTHY),
+        Server(id="s3", host="localhost", port=8003, state=ServerState.UNHEALTHY),
+        Server(id="s4", host="localhost", port=8004, state=ServerState.HEALTHY)
     ])
 
     lb = LoadBalancer(server_pool, RoundRobinStrategy())
@@ -22,10 +23,10 @@ def test_unhealthy_servers_filtering():
 def test_no_healthy_servers_available():
 
     server_pool = ServerPool([
-        Server(id="s1", host="localhost", port=8001, healthy=False),
-        Server(id="s2", host="localhost", port=8002, healthy=False),
-        Server(id="s3", host="localhost", port=8003, healthy=False),
-        Server(id="s4", host="localhost", port=8004, healthy=False)
+        Server(id="s1", host="localhost", port=8001, state=ServerState.UNHEALTHY),
+        Server(id="s2", host="localhost", port=8002, state=ServerState.UNHEALTHY),
+        Server(id="s3", host="localhost", port=8003, state=ServerState.UNHEALTHY),
+        Server(id="s4", host="localhost", port=8004, state=ServerState.UNHEALTHY)
     ])
 
     lb = LoadBalancer(server_pool, RoundRobinStrategy())

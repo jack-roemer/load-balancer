@@ -7,6 +7,7 @@ from load_balancer import (
     ServerPool,
     NoHealthyServersAvailableError,
 )
+from load_balancer.servers.server import ServerState
 
 
 def test_metrics_record_requests():
@@ -38,8 +39,8 @@ def test_metrics_record_failed_requests():
     metrics = Metrics()
 
     server_pool = ServerPool([
-        Server(id="s1", host="localhost", port=8001, healthy=False),
-        Server(id="s2", host="localhost", port=8002, healthy=False),
+        Server(id="s1", host="localhost", port=8001, state=ServerState.UNHEALTHY),
+        Server(id="s2", host="localhost", port=8002, state=ServerState.UNHEALTHY),
     ])
 
     lb = LoadBalancer(server_pool, RoundRobinStrategy(), metrics=metrics)

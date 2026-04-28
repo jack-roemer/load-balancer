@@ -1,11 +1,12 @@
-from __future__ import annotations
 from typing import Iterable
-from load_balancer.servers.server import Server
+
+from load_balancer.servers.server import Server, ServerState
 
 
-# A wrapper class to manage servers for load balancing
+"""
+    A wrapper class to manage servers for load balancing
+"""
 class ServerPool:
-
 
     def __init__(self, servers: Iterable[Server] | None = None):
 
@@ -23,14 +24,12 @@ class ServerPool:
         
         self._servers[server.id] = server
 
-    
     def remove_server(self, server_id: str) -> None:
 
         if server_id not in self._servers:
             raise KeyError(f"Server with id {server_id} does not exist in server pool.")
         
         del self._servers[server_id]
-
 
     def get_server(self, server_id: str) -> Server:
 
@@ -39,20 +38,28 @@ class ServerPool:
         
         return self._servers[server_id]
     
-
-    def get_servers(self) -> Iterable[Server]:
-
-        return self._servers.values()
     
+    # returns a static list of servers
+    def get_servers(self) -> Iterable[Server]:
+        return list(self._servers.values())
 
     def get_healthy_servers(self) -> Iterable[Server]:
-
-        return [server for server in self._servers.values() if server.healthy]
+        return [server for server in self._servers.values() if server.state == ServerState.HEALTHY]
     
 
-    def set_server_health(self, server_id: str, health: bool) -> None:
+    def set_server_state(self, server_id:str, state: ServerState):
+        self.get_server(server_id).set_state(state)
 
-        if server_id not in self._servers:
-            raise KeyError(f"Server with id {server_id} does not exist in server pool.")
+    def set_server_healthy(self, server_id: str):
+        self.get_server(server_id).set_healthy
         
-        self._servers[server_id].set_health(health)
+    def set_server_draining(self, server_id: str):
+        self.get_server(server_id).set_draining
+
+    def set_server_unhealthy(self, server_id: str):
+        self.get_server(server_id).set_unhealthy
+
+
+    def __len__(self) -> int:
+        return len(self._servers)
+
