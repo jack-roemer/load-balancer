@@ -40,10 +40,10 @@ class ServerPool:
     
     
     # returns a static list of servers
-    def get_servers(self) -> Iterable[Server]:
+    def get_servers(self) -> list[Server]:
         return list(self._servers.values())
 
-    def get_healthy_servers(self) -> Iterable[Server]:
+    def get_healthy_servers(self) -> list[Server]:
         return [server for server in self._servers.values() if server.state == ServerState.HEALTHY]
     
 
@@ -51,15 +51,12 @@ class ServerPool:
         self.get_server(server_id).set_state(state)
 
     def set_server_healthy(self, server_id: str):
-        self.get_server(server_id).set_healthy
+        self.get_server(server_id).set_healthy()
         
     def set_server_draining(self, server_id: str):
-        self.get_server(server_id).set_draining
+        self.get_server(server_id).set_draining()
 
     def set_server_unhealthy(self, server_id: str):
-        self.get_server(server_id).set_unhealthy
+        self.get_server(server_id).set_unhealthy()
 
-
-    def __len__(self) -> int:
-        return len(self._servers)
 

@@ -21,7 +21,7 @@ class Server:
     avg_response_time: float = 0.0
 
     @property
-    def get_address(self) -> str:
+    def address(self) -> str:
         return f"{self.host}:{self.port}"
     
 
