@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from load_balancer import LoadBalancer, Request, RoundRobinStrategy, Server, ServerPool, ServerState, NoHealthyServersAvailableError
+from load_balancer import *
 
 
 app = FastAPI(title="Adaptive Load Balancder API")
@@ -21,7 +21,7 @@ class CreateServer(BaseModel):
     port: int
     weight: int = 1
 
-class UpdateServer(BaseModel):
+class UpdateServerState(BaseModel):
 
     state: ServerState
 
@@ -30,6 +30,10 @@ class HandleRequest(BaseModel):
     client_id: str | None = None
     path: str = "/"
     headers: dict[str, str] = Field(default_factory=dict)
+
+class UpdateRoutingStrategy(BaseModel):
+
+    strategy: str
 
 
 @app.get("/servers")
@@ -52,6 +56,27 @@ def list_servers():
         for server in servers
 
     ]
+
+@app.get("/servers/{server_id}")
+def get_server(server_id: str):
+
+    try: 
+        server = server_pool.get_server(server_id)
+
+        return {
+            "id": server.id,
+            "host": server.host,
+            "port": server.port,
+            "address": server.address,
+            "weight": server.weight,
+            "state": server.state.value,
+            "active_connections": server.active_connections,
+            "avg_response_time": server.avg_response_time,
+        }
+
+    except KeyError as e:
+
+        raise HTTPException(status_code=404, detail=str(e))
 
 @app.post("/servers")
 def create_server(server_data: CreateServer):
@@ -78,7 +103,7 @@ def delete_server(server_id: str):
         raise HTTPException(status_code=404, detail=str(e))
     
 @app.patch("/servers/{server_id}/state")
-def update_server_state(server_id: str, server_data: UpdateServer):
+def update_server_state(server_id: str, server_data: UpdateServerState):
 
     try: 
 
@@ -113,3 +138,23 @@ def get_metrics():
 
     return load_balancer.get_metrics()
     
+@app.patch("/strategy")
+def update_strategy(strategy_data: UpdateRoutingStrategy):
+
+    global load_balancer
+
+    strategy_map = {
+        "round_robin": RoundRobinStrategy,
+        "least_connections": LeastConnectionsStrategy,
+        "weighted_round_robin": WeightedRoundRobinStrategy,
+        "consistent_hashing": ConsistentHashingStrategy,
+    }
+
+    strategy = strategy_data.strategy.lower()
+
+    if strategy not in strategy_map:
+
+        raise HTTPException(status_code=400, detail=f"Unsupported strategy. Valid options are: {', '.join(strategy_map.keys())}")
+    
+    load_balancer = LoadBalancer(server_pool, strategy_map[strategy]())
+    return {"message": f"Routing strategy updated to {strategy}."}

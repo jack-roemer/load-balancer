@@ -3,6 +3,7 @@ from enum import Enum
 
 
 class ServerState(str, Enum):
+    
     HEALTHY = "healthy"
     DRAINING = "draining"
     UNHEALTHY = "unhealthy"
