@@ -12,11 +12,12 @@ class NoHealthyServersAvailableError(Exception):
 
 class LoadBalancer:
 
-    def __init__(self, server_pool: ServerPool, routing_strategy: RoutingStrategy, metrics: Metrics | None = None):
+    def __init__(self, server_pool: ServerPool, routing_strategy: RoutingStrategy, metrics: Metrics | None = None, faliure_threshold: int = 3):
 
         self._server_pool = server_pool
         self._routing_strategy = routing_strategy
         self._metrics = metrics if metrics is not None else Metrics()
+        self._faliure_threshold = faliure_threshold
 
 
     def handle_request(self, request: Request) -> Server:
@@ -34,5 +35,18 @@ class LoadBalancer:
     
 
     def get_metrics(self) -> dict:
+        
         health_count = len(self._server_pool.get_healthy_servers())
         return self._metrics.get_metrics(health_count)
+    
+    def record_server_failure(self, server_id: str) -> None:
+
+        server = self._server_pool.get_server(server_id)
+        server.record_failure()
+
+        if server.failure_count >= self._failure_threshold:
+            server.set_unhealthy()
+
+    def record_server_success(self, server_id: str) -> None:
+        server = self._server_pool.get_server(server_id)
+        server.reset_failures()

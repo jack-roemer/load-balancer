@@ -20,6 +20,7 @@ class Server:
     state: ServerState = ServerState.HEALTHY
     active_connections: int = 0
     avg_response_time: float = 0.0
+    faliure_count: int = 0
 
     @property
     def address(self) -> str:
@@ -39,6 +40,13 @@ class Server:
     def remove_active_connection(self):
         if self.active_connections > 0:
             self.active_connections -= 1
+
+    
+    def record_failure(self) -> None:
+        self.failure_count += 1
+
+    def reset_failures(self) -> None:
+        self.failure_count = 0
 
 
     def set_state(self, state: ServerState):
