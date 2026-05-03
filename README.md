@@ -1,122 +1,280 @@
 # Adaptive Load Balancer
 
-A portfolio-focused Python load balancer framework that routes requests across backend servers using pluggable algorithms, health-aware filtering, and a modular architecture.
+Adaptive Load Balancer is a Python project that simulates core load-balancing behavior behind modern distributed systems. It routes incoming requests across backend servers using pluggable algorithms, tracks basic runtime metrics, exposes a FastAPI control plane, and supports simple server state management.
 
-## Current MVP v1 Scope
-- Pluggable routing strategy interface
-- Backend server model and server pool
-- Core load balancer orchestrator
-- Round robin routing
-- Least connections routing
-- Basic healthy/unhealthy filtering
-- Unit tests for routing behavior
+## What the project does
 
-## Current Repository Layout
+This project provides a small but extensible load balancer framework with:
+
+- multiple routing strategies:
+  - round robin
+  - least connections
+  - weighted round robin
+  - consistent hashing
+- server pool management
+- server states (`healthy`, `draining`, `unhealthy`)
+- request metrics
+- a FastAPI API for interacting with the load balancer
+- automated tests covering the core behaviors
+
+It is designed as a portfolio project that demonstrates clean architecture, testing, and systems-oriented design rather than trying to replace a production reverse proxy.
+
+## Why the project is useful
+
+This project is useful because it demonstrates several backend engineering concepts in one codebase:
+
+- **Pluggable design**: routing algorithms are isolated behind a common strategy interface.
+- **Health-aware routing**: only healthy servers are selected for new requests.
+- **State management**: servers can be marked healthy, draining, or unhealthy.
+- **Observability**: the load balancer tracks total requests, failed requests, and requests per server.
+- **API-driven control**: the FastAPI layer makes it easy to inspect and modify the system at runtime.
+- **Testability**: the project includes unit tests and API tests to validate current behavior.
+
+### Current feature set
+
+- Strategy-based request routing
+- In-memory server registry and state transitions
+- Metrics snapshots
+- Demo script for local experimentation
+- API endpoints for:
+  - listing servers
+  - retrieving a server by ID
+  - creating and deleting servers
+  - updating server state
+  - handling a request
+  - retrieving metrics
+  - switching routing strategy
+
+## Project structure
 
 ```text
 src/
-  load_balancer/
-    __init__.py
-    algos/
-      routing_strategy.py
-      round_robin.py
-      least_connections.py
-    core/
-      load_balancer.py
-      request.py
-    servers/
-      server.py
-      server_pool.py
+├── api.py
+├── main.py
+└── load_balancer/
+    ├── algos/
+    │   ├── consistent_hashing.py
+    │   ├── least_connections.py
+    │   ├── round_robin.py
+    │   ├── routing_strategy.py
+    │   └── weighted_round_robin.py
+    ├── core/
+    │   ├── load_balancer.py
+    │   └── request.py
+    ├── observability/
+    │   └── metrics.py
+    └── servers/
+        ├── server.py
+        └── server_pool.py
+
 tests/
-  test_round_robin.py
-  test_least_connections.py
-  test_health_filtering.py
+├── test_api.py
+├── test_consistent_hashing.py
+├── test_health_filtering.py
+├── test_least_connections.py
+├── test_metrics.py
+├── test_round_robin.py
+├── test_server_states.py
+└── test_weighted_round_robin.py
 ```
 
-## Architecture
+## Architecture overview
 
-### Server
-Represents a backend target.
+### `Server`
+Represents a backend server.
 
-Fields today:
+Key fields:
 - `id`
 - `host`
 - `port`
 - `weight`
-- `healthy`
+- `state`
 - `active_connections`
 - `avg_response_time`
 
-### ServerPool
-Responsible for:
-- adding and removing servers
-- retrieving all servers
-- retrieving healthy servers only
-- updating server health
+### `ServerPool`
+Stores and manages backend servers.
 
-### Request
-A small request model used by routing algorithms.
+Responsibilities:
+- add/remove servers
+- retrieve one or all servers
+- filter routable servers
+- update server state
 
-Fields:
-- `client_id`
-- `path`
-- `headers`
+### `RoutingStrategy`
+Abstract strategy interface used by routing algorithms.
 
-### RoutingStrategy
-Abstract base class for pluggable server-selection strategies.
+Current implementations:
+- `RoundRobinStrategy`
+- `LeastConnectionsStrategy`
+- `WeightedRoundRobinStrategy`
+- `ConsistentHashingStrategy`
 
-### LoadBalancer
-Coordinates request handling by:
-1. asking the pool for healthy servers
-2. delegating selection to the active routing strategy
-3. returning the selected server
+### `LoadBalancer`
+Core orchestrator that:
+- obtains healthy servers from the pool
+- delegates selection to the active strategy
+- records metrics
+- raises an error when no healthy servers are available
 
-## MVP v1 Plan
+### `Metrics`
+Tracks basic runtime counters:
+- total requests
+- failed requests
+- requests per server
+- healthy server count snapshot
 
-### Step 1: Foundation refactor
-- Keep strategy-specific state inside each strategy class
-- Keep orchestration inside `LoadBalancer`
-- Keep server state in `Server`
-- Keep server collection logic in `ServerPool`
+### `FastAPI API`
+Provides a simple control plane around the load balancer.
 
-### Step 2: Stabilize the current code
-- fix argument ordering bug in `LoadBalancer.handle_request`
-- clean up imports in tests
-- align the least-connections test with the implemented behavior
-- add packaging so tests run without manual path setup
+## How users can get started
 
-### Step 3: Expand routing support
-- add weighted round robin
-- add consistent hashing
-- optionally add least response time
+### Requirements
 
-### Step 4: Improve usability
-- add a small demo in `src/main.py`
-- add config support
-- add benchmark/simulation scripts
+- Python 3.11+
+- `pip`
 
-### Step 5: Make it portfolio-ready
-- add API endpoints with FastAPI
-- add runtime metrics and health views
-- add benchmark results and diagrams to the repo
+### Installation
 
-## How to Run Tests
-
-Install dependencies:
+Clone the repository and install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run tests from the project root:
+### Run the test suite
+
+From the project root:
 
 ```bash
 PYTHONPATH=src python -m pytest -q
 ```
 
-## Recommended Next Steps
-1. Fix the current bugs so the MVP baseline is stable.
-2. Add weighted round robin as the next strategy.
-3. Add consistent hashing for sticky routing.
-4. Package the project cleanly with a `pyproject.toml`.
-5. Add a runnable demo and benchmark script.
+At the time of this update, the project test suite passes end to end.
+
+### Run the local demo
+
+```bash
+PYTHONPATH=src python src/main.py
+```
+
+This runs small examples for:
+- round robin
+- least connections
+- weighted round robin
+- consistent hashing
+
+### Start the FastAPI server
+
+```bash
+PYTHONPATH=src python -m uvicorn api:app --reload --app-dir src
+```
+
+Then open the interactive docs at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+## Usage examples
+
+### Example: route a request in Python
+
+```python
+from load_balancer import (
+    LoadBalancer,
+    Request,
+    RoundRobinStrategy,
+    Server,
+    ServerPool,
+)
+
+pool = ServerPool([
+    Server(id="s1", host="localhost", port=8001),
+    Server(id="s2", host="localhost", port=8002),
+])
+
+lb = LoadBalancer(pool, RoundRobinStrategy())
+selected = lb.handle_request(Request(client_id="user-1", path="/api/orders"))
+
+print(selected.id)
+print(selected.address)
+```
+
+### Example: create a server through the API
+
+```bash
+curl -X POST http://127.0.0.1:8000/servers \
+  -H "Content-Type: application/json" \
+  -d '{"id":"s3","host":"localhost","port":8003,"weight":2}'
+```
+
+### Example: mark a server as draining
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/servers/s1/state \
+  -H "Content-Type: application/json" \
+  -d '{"state":"draining"}'
+```
+
+### Example: switch routing strategy
+
+```bash
+curl -X PATCH http://127.0.0.1:8000/strategy \
+  -H "Content-Type: application/json" \
+  -d '{"strategy":"least_connections"}'
+```
+
+### Example: inspect metrics
+
+```bash
+curl http://127.0.0.1:8000/metrics
+```
+
+## API endpoints
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/servers` | List all servers |
+| `GET` | `/servers/{server_id}` | Fetch one server |
+| `POST` | `/servers` | Add a new server |
+| `DELETE` | `/servers/{server_id}` | Remove a server |
+| `PATCH` | `/servers/{server_id}/state` | Update server state |
+| `POST` | `/handle_request` | Route a request |
+| `GET` | `/metrics` | Return metrics snapshot |
+| `PATCH` | `/strategy` | Change routing strategy |
+
+## Testing
+
+The repository includes:
+- unit tests for each routing algorithm
+- tests for health filtering and server states
+- metrics tests
+- FastAPI endpoint tests
+
+Run everything with:
+
+```bash
+PYTHONPATH=src python -m pytest -q
+```
+
+## Current limitations
+
+This is an educational and portfolio-oriented project. It currently uses:
+- in-memory state only
+- simulated request routing rather than proxying live upstream traffic
+- no background health checker yet
+- no persistence layer
+- no authentication on the API
+
+## Next development focus
+
+The next major improvement is health and failure tracking, including:
+- passive failure counting
+- automatic transition to unhealthy state after repeated failures
+- recovery behavior
+- richer metrics around server health events
+
+## License
+
+TODO
